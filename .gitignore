@@ -1,0 +1,47 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# PyInstaller build output
+build/
+dist/
+*.spec
+
+# Release build output
+release/
+packaging/C-Lite-IDE-generated.iss
+
+# Generated/temporary files
+*.log
+*.tmp
+*.temp
+*.exe
+
+# IDE/editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Environment/secrets
+.env
+.env.*
+
+# User settings (generated on first run)
+settings.json
+
+# Test executables and output (if any)
+tests/*.exe
+tests/*.out
+
+# Compiled C programs in examples (generated during testing)
+examples/**/build/
+examples/**/*.exe
