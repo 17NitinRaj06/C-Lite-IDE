@@ -26,9 +26,9 @@
 
 !define APP_NAME "C-Lite IDE"
 !define APP_PUBLISHER "C-Lite"
-!define APP_URL "https://github.com/YOUR_GITHUB_USERNAME/C-Lite-IDE"
+!define APP_URL "https://github.com/17NitinRaj06/C-Lite-IDE"
 !define APP_EXE "C-Lite IDE.exe"
-!define APP_VERSION "VERSION_PLACEHOLDER"
+!define APP_VERSION "1.0.0"
 
 ; ------------------------------------------------------------
 ; Installer configuration

@@ -26,6 +26,8 @@ static HDC      g_memdc = NULL;
 static HBITMAP  g_bmp = NULL;
 static int      g_w = 640;
 static int      g_h = 480;
+static int      g_win_w = 640;
+static int      g_win_h = 480;
 static int      g_initialized = 0;
 static HANDLE   g_thread = NULL;
 
@@ -175,13 +177,25 @@ static LRESULT CALLBACK clite_wndproc(HWND hwnd, UINT msg, WPARAM w, LPARAM l)
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
-        if (g_memdc)
-            BitBlt(hdc, 0, 0, g_w, g_h, g_memdc, 0, 0, SRCCOPY);
+        if (g_memdc) {
+            RECT rc;
+            GetClientRect(hwnd, &rc);
+            int cw = rc.right - rc.left;
+            int ch = rc.bottom - rc.top;
+            StretchBlt(hdc, 0, 0, cw, ch, g_memdc, 0, 0, g_w, g_h, SRCCOPY);
+        }
         EndPaint(hwnd, &ps);
         return 0;
     }
     case WM_ERASEBKGND:
         return 1;
+    case WM_SIZE: {
+        RECT rc;
+        GetClientRect(hwnd, &rc);
+        g_win_w = rc.right - rc.left;
+        g_win_h = rc.bottom - rc.top;
+        return 0;
+    }
     case WM_CLOSE:
         DestroyWindow(hwnd);
         return 0;
@@ -215,12 +229,10 @@ static DWORD WINAPI clite_gfx_thread(LPVOID arg)
     PeekMessageA(&dummy, NULL, 0, 0, PM_NOREMOVE);
 
     r.left = 0; r.top = 0; r.right = g_w; r.bottom = g_h;
-    AdjustWindowRect(&r, WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
-                     WS_MINIMIZEBOX, FALSE);
+    AdjustWindowRect(&r, WS_OVERLAPPEDWINDOW, FALSE);
 
     hwnd = CreateWindowExA(0, "CliteBGIWindow", "C-Lite Graphics Window",
-                           WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
-                           WS_MINIMIZEBOX,
+                           WS_OVERLAPPEDWINDOW,
                            CW_USEDEFAULT, CW_USEDEFAULT,
                            r.right - r.left, r.bottom - r.top,
                            NULL, NULL, wc.hInstance, NULL);
@@ -360,6 +372,8 @@ void initgraph(int *gdriver, int *gmode, char *pathtodriver)
 
     g_w = w;
     g_h = h;
+    g_win_w = w;
+    g_win_h = h;
     clite_create_window();
     g_initialized = 1;
     cleardevice();
@@ -381,6 +395,8 @@ void closegraph(void)
     if (g_memdc) { DeleteDC(g_memdc); g_memdc = NULL; }
     if (g_bmp)   { DeleteObject(g_bmp); g_bmp = NULL; }
     g_hwnd = NULL;
+    g_win_w = 0;
+    g_win_h = 0;
 }
 
 void detectgraph(int *gdriver, int *gmode)
