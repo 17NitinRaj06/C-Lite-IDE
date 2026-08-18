@@ -1,328 +1,281 @@
 # C-Lite IDE
 
-A lightweight C/C++ IDE for Windows, designed for students learning C with Turbo C / Borland-era workflow. C-Lite provides a complete offline development environment with a bundled MinGW compiler, Turbo C-compatible `graphics.h` and `conio.h` implementations, and a familiar tabbed editor interface.
+A lightweight, offline C/C++ IDE for Windows focused on a simple, student-friendly development experience with Turbo C/Borland-style compatibility.
 
-**Version:** 1.0.0
+C-Lite includes a bundled MinGW toolchain, a tabbed code editor, integrated build/run tools, terminal support, and compatibility layers for `graphics.h` and `conio.h`.
 
-## Features
+**Current version:** 1.0.0
 
-- **Code Editor** — Tabbed interface with syntax highlighting for C/C++, line numbers, find/replace, go to line, code folding
-- **Syntax Highlighting** — Configurable themes (Light/Dark) with C/C++ syntax coloring
-- **Project/File Explorer** — Lazy-loaded tree view with file operations (new, rename, delete, refresh), active file highlighting
-- **Compile & Run** — One-click build (F6) and compile-and-run (F5) with automatic dependency tracking
-- **Integrated Terminal** — Program I/O with stdin support for interactive programs
-- **Compile Log** — Dedicated panel showing exact compiler command, raw output, elapsed time, and success/failure summary
-- **Problems Panel** — Parsed errors/warnings with click-to-navigate
-- **C/C++ Support** — Auto-detects `.c`/`.cpp`/`.cc`/`.cxx` files, uses `gcc`/`g++` appropriately
-- **Graphics Support** — Full `graphics.h` / BGI compatibility via native Windows GDI runtime (`line`, `circle`, `rectangle`, `bar`, `ellipse`, `floodfill`, `drawpoly`, `fillpoly`, `pieslice`, `sector`, text output, viewports, palettes, etc.)
-- **Conio Support** — `getch()`, `kbhit()`, `clrscr()`, `gotoxy()`, `textColor()`, `textBackground()`, `cprintf()`, `delay()`, `sound()`, `nosound()` — works in both real console and IDE terminal
-- **Turbo C Compatibility** — Accepts `void main()`, historical `initgraph(&gd, &gm, "C:\\TURBOC3\\BGI")` path (ignored), classic 16-color palette constants
-- **Dark Theme** — Cohesive charcoal color scheme across editor, explorer, terminal, tabs, dialogs
-- **DPI Awareness** — Native rendering at 125%/150%/200% scaling (no blurry file dialogs)
-- **Official Icon** — Tk feather icon embedded in exe, taskbar, Alt+Tab, Explorer
-- **Fully Offline** — Bundled 32-bit MinGW GCC 6.3.0, no internet required after download
-- **Portable** — Single `.exe` distribution with all dependencies self-contained
+## Highlights
 
-## Requirements
+- Tabbed C/C++ editor with syntax highlighting, line numbers, code folding, find/replace, and Go to Line
+- Project and file explorer with common file operations
+- One-click compile and run
+- Integrated terminal with standard input support
+- Compile log and Problems panel with navigable diagnostics
+- Automatic C/C++ compiler selection for `.c`, `.cpp`, `.cc`, and `.cxx`
+- Turbo C-compatible `graphics.h` and `conio.h` APIs
+- Native Windows GDI graphics runtime with double-buffered rendering
+- Dark and light editor themes
+- Windows DPI-aware rendering
+- Bundled 32-bit MinGW GCC 6.3.0 toolchain
+- Fully offline runtime after installation
+- Self-contained Windows distribution
+- Built-in update checker through GitHub Releases
 
-### Running from Source
-- Windows 10/11 (x64)
-- Python 3.10+ (tested on 3.13) with `tkinter` (standard library)
-- No additional Python packages required
+## Compatibility
 
-### Packaged Executable
-- Windows 10/11 (x64)
-- No Python installation needed — completely self-contained
+### Supported OS
 
-## Running from Source
+- Windows 10
+- Windows 11
+
+### Running from source
+
+- Python 3.10 or newer
+- `tkinter` (included with standard Python Windows installations)
+- No additional runtime packages are required
+
+### Packaged application
+
+The packaged application does not require Python or a separate compiler installation.
+
+## Getting Started
+
+### Run from source
 
 ```cmd
+git clone <your-repository-url>
 cd C-Lite-IDE
 python clite.py
 ```
 
-Or use the launcher:
+You can also use the Windows launcher:
+
 ```cmd
 start.bat
 ```
 
-## Building the Executable
+### Using the installer
 
-The project includes a complete PyInstaller build pipeline.
+For end users, use the latest `C-Lite-IDE-Setup-<version>.exe` from the project's GitHub Releases page.
 
-### Prerequisites
-```cmd
-pip install pyinstaller
-```
+The installer provides:
 
-### Build
-```cmd
-cd packaging
-build_ide.bat
-```
-
-Output: `dist\C-Lite IDE\C-Lite IDE.exe` with `compiler/`, `include/`, `runtime/`, `examples/`, `icons/` copied alongside for a fully self-contained offline distribution.
-
-The build script:
-1. Compiles `packaging/app.rc` with the bundled `windres` (embeds icon + version resource)
-2. Runs PyInstaller with `--onedir --windowed --icon icons\app.ico`
-3. Copies all runtime dependencies next to the exe
-
-## Project Structure
-
-```
-C-Lite-IDE/
-├── clite_ide/           # Main application package
-│   ├── app.py           # Main window, editor tabs, menus, toolchain glue
-│   ├── builder.py       # GCC invocation, runtime object compilation, Defender warm-up
-│   ├── runner.py        # Background process launch with stop guard
-│   ├── tabs.py          # ClosableNotebook with X button per tab
-│   ├── editor.py        # Syntax-highlighting editor with find/replace
-│   ├── explorer.py      # Project/File explorer (lazy tree, file ops)
-│   ├── terminal.py      # Integrated terminal (program I/O)
-│   ├── compilelog.py    # Compile Log panel
-│   ├── problems.py      # Problems panel (parsed errors/warnings)
-│   ├── project.py       # Project model (.cliteproject)
-│   ├── settings.py      # Themes, settings persistence, compiler discovery
-│   ├── dialogs.py       # Themed dialog replacements (ask_string, ask_yes_no, etc.)
-│   ├── uistyle.py       # Shared ttk menu styling
-│   ├── dpi.py           # DPI awareness bootstrap
-│   ├── windows.py       # AppUserModelID, icon path resolution
-│   ├── lexer.py         # C/C++ syntax highlighter
-│   ├── examples.py      # Built-in examples catalog
-│   └── __init__.py      # Path constants (ROOT, INCLUDE_DIR, RUNTIME_DIR, etc.)
-├── compiler/
-│   └── mingw/           # Bundled 32-bit MinGW GCC 6.3.0 (bin, include, lib, libexec, share)
-├── include/             # C headers: graphics.h, conio.h, dos.h
-├── runtime/             # C runtime sources (compiled & linked automatically)
-│   ├── bgilite.c        # Win32 GDI implementation of BGI graphics.h
-│   ├── conio_lite.c     # Console I/O (getch, clrscr, gotoxy, etc.)
-│   └── clite_startup.c  # Unbuffered stdout/stderr before main()
-├── examples/
-│   ├── console/         # Console programs (hello_world, fibonacci, etc.)
-│   └── graphics/        # Graphics demos (dda_line, circle, shapes, transformations)
-├── icons/
-│   ├── app.ico          # Multi-resolution Windows icon (16-256px)
-│   └── app.png          # 256px PNG (runtime iconphoto fallback)
-├── packaging/
-│   ├── build_ide.bat    # Build pipeline (windres + PyInstaller + copy deps)
-│   ├── app.rc           # Version resource + icon
-│   └── make_icon.py     # Regenerates icons from tk86t.dll feather resources
-├── tests/               # Development test suite
-│   ├── test_tabs.py
-│   ├── test_close_state.py
-│   ├── test_dialog_center.py
-│   ├── test_statusbar.py
-│   ├── test_explorer.py
-│   ├── smoke.py
-│   ├── e2e.py
-│   └── input_test.py
-├── clite.py             # Entry point
-├── settings.json        # User settings (created on first run)
-├── C-Lite IDE.spec      # PyInstaller spec (minimal; build_ide.bat is authoritative)
-├── start.bat            # Quick launcher (pythonw fallback to python)
-├── CONTEXT.md           # Project context for AI assistants
-└── README.md            # This file
-```
-
-## C-Lite Compiler & Runtime
-
-### Bundled Toolchain
-C-Lite ships with **MinGW.org GCC 6.3.0 (32-bit)** — the exact build the BGI runtime was developed against. The toolchain lives at `compiler/mingw/` and includes:
-- `bin/gcc.exe`, `g++.exe`, `ar.exe`, `ld.exe`, `as.exe`, `windres.exe`
-- Runtime DLLs: `libgcc_s_dw2-1.dll`, `libstdc++-6.dll`, `libgmp-10.dll`, `libmpfr-4.dll`, `libmpc-3.dll`
-- Standard headers in `include/`, libraries in `lib/`
-
-### Compiler Discovery Priority
-1. Bundled `compiler\mingw\bin\gcc.exe`
-2. User-configured path in View → Settings → GCC path
-3. `gcc` on system PATH
-4. Common install locations (`C:\MinGW`, `C:\mingw64`, TDM-GCC, MSYS2)
-
-### Build Process
-- Runtime sources (`bgilite.c`, `conio_lite.c`, `clite_startup.c`) are compiled to `.o` files once per build directory and reused
-- Graphics programs link with `-lgdi32 -lm` (no `graphics.lib`/`libbgi.a` needed)
-- `clite_startup.c` runs before `main()` and makes stdout/stderr unbuffered for instant terminal output
-- Windows Defender first-run scan is triggered **during compilation** (`builder._warm_exe()`) so the first Run is instant
-
-### Graphics Runtime (`bgilite.c`)
-- Re-implements Turbo C BGI using native Windows GDI
-- Double-buffered drawing to an in-memory bitmap, blitted to a dedicated top-level window
-- `initgraph()` ignores the historical driver path — no BGI files required
-- Runs the graphics window on a separate thread; main thread pumps messages to avoid deadlock
-- Implements the full classic API: primitives, viewports, palettes, text, image operations, flood fill, polygons, arcs, ellipses, bar3d, pieslice, sector
-
-### Conio Runtime (`conio_lite.c`)
-- Dual-mode: native Windows console APIs when attached to a real console; stdio fallback when piped (IDE terminal)
-- `getch()`/`kbhit()` work correctly after `scanf()` (skips leftover newlines)
-- `clrscr()`, `gotoxy()`, `textColor()`, `textBackground()`, `cprintf()`, `delay()`, `sound()`, `nosound()`
-
-## Testing
-
-Run the test suite from the project root:
-
-```cmd
-python tests\test_tabs.py
-python tests\test_close_state.py
-python tests\test_dialog_center.py
-python tests\test_statusbar.py
-python tests\test_explorer.py
-python tests\smoke.py
-python tests\e2e.py
-python tests\input_test.py
-```
-
-**Note:** Set `PYTHONIOENCODING=utf-8` if running in a console that doesn't support the ✕ glyph (cp1252).
-
-## License
-
-**LICENSE NOT SELECTED** — This project does not currently have a license. Choose an appropriate open-source license (MIT, BSD-3-Clause, GPL-3.0, etc.) before public distribution.
-
-## Installation
-
-### Using the Installer (Recommended for End Users)
-
-1. Download the latest `C-Lite-IDE-Setup-<version>.exe` from the [GitHub Releases](https://github.com/YOUR_GITHUB_USERNAME/C-Lite-IDE/releases) page.
-2. Double-click the installer to launch the setup wizard.
-3. Follow the on-screen instructions:
-   - Choose installation directory (default: `C:\Program Files\C-Lite IDE\`)
-   - Optionally create a Desktop shortcut
-4. Click **Install** to begin installation.
-5. After installation completes, launch C-Lite IDE from the Start Menu or Desktop shortcut.
-
-The installer includes:
-- C-Lite IDE application
-- Bundled MinGW GCC 6.3.0 compiler
-- C headers (`graphics.h`, `conio.h`, `dos.h`)
-- BGI graphics runtime
+- C-Lite IDE
+- Bundled MinGW compiler
+- C-Lite compatibility headers
+- Graphics and console runtime
 - Example programs
-- Application icon
+- Application resources
+- Windows Start Menu and optional desktop shortcuts
+- Uninstaller
 
-### Uninstalling
+Personal source-code projects are not removed when C-Lite IDE is uninstalled.
 
-- **Via Windows Settings:** Settings → Apps → Installed apps → C-Lite IDE → Uninstall
-- **Via Start Menu:** Start Menu → C-Lite IDE → Uninstall C-Lite IDE
+## Building
 
-The uninstaller removes all application files, the bundled compiler, and shortcuts. Your personal projects are not deleted.
+### Build the application
 
-## Building from Source
-
-### Prerequisites
-
-- Windows 10/11 (x64)
-- Python 3.10+ with `tkinter` (standard library)
-- [Inno Setup 6](https://jrsoftware.org/isinfo.php) (for creating the installer)
-- `pyinstaller` Python package
+Install the build dependency:
 
 ```cmd
 pip install pyinstaller
 ```
 
-### Building the Executable
+Then run:
 
 ```cmd
 cd packaging
 build_ide.bat
 ```
 
-Output: `dist\C-Lite IDE\C-Lite IDE.exe` with all dependencies copied alongside.
+The build produces a self-contained application directory containing the IDE and required compiler/runtime files.
 
-### Building the Installer
+### Build the Windows installer
+
+The release pipeline uses **NSIS** to create the installer.
+
+Run:
 
 ```cmd
 cd packaging
 build_release.bat
 ```
 
-Output: `release\C-Lite-IDE-Setup-<version>.exe`
+The installer is generated in:
 
-The release build script:
-1. Reads version from `version.txt`
-2. Cleans previous build output
-3. Builds the executable via `build_ide.bat`
-4. Generates Inno Setup script with version
-5. Compiles installer with Inno Setup
-6. Outputs to `release\` directory
-
-## Creating a Release
-
-To create a new release (e.g., version 1.1.0):
-
-1. **Update version:**
-   Edit `version.txt`:
-   ```
-   1.1.0
-   ```
-
-2. **Update GitHub configuration:**
-   Edit `github_config.ini` with your GitHub username:
-   ```
-   GITHUB_OWNER = your-github-username
-   GITHUB_REPO = C-Lite-IDE
-   ```
-
-3. **Test the build:**
-   ```cmd
-   packaging\build_release.bat
-   ```
-
-4. **Verify the installer:**
-   - Run `release\C-Lite-IDE-Setup-1.1.0.exe`
-   - Install and test C-Lite IDE
-   - Verify compiler, graphics, terminal all work
-   - Test uninstaller
-
-5. **Commit and tag:**
-   ```cmd
-   git add version.txt github_config.ini
-   git commit -m "Release C-Lite IDE 1.1.0"
-   git push
-   git tag v1.1.0
-   git push origin v1.1.0
-   ```
-
-6. **Create GitHub Release:**
-   - Go to GitHub Releases page
-   - Click "Create a new release"
-   - Select tag `v1.1.0`
-   - Title: `C-Lite IDE 1.1.0`
-   - Upload `release\C-Lite-IDE-Setup-1.1.0.exe`
-   - Publish release
-
-## Update System
-
-C-Lite IDE includes a built-in update checker:
-
-**Help → Check for Updates**
-
-This queries the GitHub Releases API and compares the installed version with the latest release. If a newer version is available, it shows:
-- Current version vs. latest version
-- Release notes
-- Buttons to view release page or download the installer
-
-## Versioning
-
-C-Lite IDE uses [Semantic Versioning](https://semver.org/):
-
+```text
+release\C-Lite-IDE-Setup-<version>.exe
 ```
+
+Before building a release, make sure NSIS and PyInstaller are installed and available to the build scripts.
+
+## Project Structure
+
+```text
+C-Lite-IDE/
+├── clite_ide/
+│   ├── app.py           # Main application and UI
+│   ├── builder.py       # Compilation and toolchain integration
+│   ├── runner.py        # Program execution
+│   ├── tabs.py          # Editor tab management
+│   ├── editor.py        # Code editor
+│   ├── explorer.py      # Project/file explorer
+│   ├── terminal.py      # Integrated terminal
+│   ├── compilelog.py    # Compiler output
+│   ├── problems.py      # Error and warning navigation
+│   ├── project.py       # Project model
+│   ├── settings.py      # Preferences and compiler configuration
+│   ├── dialogs.py       # Application dialogs
+│   ├── uistyle.py       # Shared UI styling
+│   ├── dpi.py           # Windows DPI handling
+│   ├── windows.py       # Windows application integration
+│   ├── lexer.py         # C/C++ syntax highlighting
+│   └── examples.py      # Example program catalog
+├── compiler/
+│   └── mingw/           # Bundled MinGW GCC 6.3.0 toolchain
+├── include/             # C-Lite compatibility headers
+├── runtime/
+│   ├── bgilite.c        # graphics.h / BGI compatibility runtime
+│   ├── conio_lite.c     # conio.h compatibility runtime
+│   └── clite_startup.c  # Runtime startup support
+├── examples/
+│   ├── console/         # Console examples
+│   └── graphics/        # Graphics examples
+├── icons/               # Application icons
+├── packaging/           # Build and installer scripts
+├── tests/               # Automated and smoke tests
+├── clite.py             # Application entry point
+├── version.txt          # Release version
+├── settings.json        # User settings (created at runtime)
+├── C-Lite IDE.spec      # PyInstaller specification
+├── start.bat            # Windows launcher
+└── README.md            # Project documentation
+```
+
+## Compiler and Runtime
+
+C-Lite bundles **MinGW.org GCC 6.3.0 (32-bit)** to provide a consistent offline toolchain.
+
+The compiler discovery order is:
+
+1. Bundled MinGW compiler
+2. User-configured GCC path
+3. `gcc` available on the system `PATH`
+4. Common MinGW/TDM-GCC/MSYS2 installation locations
+
+### Graphics compatibility
+
+The graphics runtime provides a Windows GDI implementation of the classic BGI API.
+
+It supports common Turbo C graphics functionality including:
+
+- Lines, circles, rectangles, ellipses, arcs, sectors, and pies
+- Polygons and filled polygons
+- Bar and bar3d operations
+- Flood fill
+- Text rendering
+- Viewports
+- Palette operations
+- Image operations
+
+The historical BGI driver path used by programs such as:
+
+```c
+initgraph(&gd, &gm, "C:\TURBOC3\BGI");
+```
+
+is accepted for compatibility but is not required. C-Lite supplies its own runtime.
+
+### Conio compatibility
+
+C-Lite implements commonly used Turbo C console functions including:
+
+- `getch()`
+- `kbhit()`
+- `clrscr()`
+- `gotoxy()`
+- `textColor()`
+- `textBackground()`
+- `cprintf()`
+- `delay()`
+- `sound()`
+- `nosound()`
+
+## Testing
+
+Run the test suite from the project root:
+
+```cmd
+python tests	est_tabs.py
+python tests	est_close_state.py
+python tests	est_dialog_center.py
+python tests	est_statusbar.py
+python tests	est_explorer.py
+python tests\smoke.py
+python tests\e2e.py
+python tests\input_test.py
+```
+
+For release builds, verify at minimum:
+
+- Application startup
+- File open/save/close behavior
+- Compile and run
+- C and C++ compilation
+- Integrated terminal input/output
+- Graphics programs
+- Project/file operations
+- Settings persistence
+- Installer installation
+- Start Menu/Desktop shortcuts
+- Uninstallation
+- Clean installation on a Windows machine without Python
+
+## Releases
+
+C-Lite follows [Semantic Versioning](https://semver.org/).
+
+```text
 MAJOR.MINOR.PATCH
 ```
 
 Examples:
+
 - `1.0.0` — Initial release
 - `1.0.1` — Bug fixes
-- `1.1.0` — New features (backward compatible)
+- `1.1.0` — Backward-compatible features
 - `2.0.0` — Breaking changes
 
-The version is stored in `version.txt` and automatically used by:
-- Application (window title, About dialog)
-- PyInstaller build (executable version resource)
-- Inno Setup installer (installer version, output filename)
-- Update checker (comparison with GitHub Releases)
+The version is maintained in `version.txt` and used by the application and release pipeline.
+
+### Release checklist
+
+1. Update `version.txt`.
+2. Run the full test suite.
+3. Build the application.
+4. Build the NSIS installer.
+5. Test the installer on a clean Windows environment.
+6. Verify compile, run, terminal, and graphics functionality.
+7. Commit the release changes.
+8. Create and push the corresponding Git tag.
+9. Publish the installer with the GitHub Release.
+
+## License
+
+This project is distributed under the license included in the repository's `LICENSE` file.
+
+## Author
+
+**Nitin Raj**
+
+- [LinkedIn](https://www.linkedin.com/in/nitin-raj-17d12/)
+- [Portfolio](https://nitin-raj-vercel.app)
 
 ## Acknowledgments
 
-- **Tkinter** — The feather icon is extracted from `tk86t.dll` (Tcl/Tk)
-- **MinGW.org** — Bundled GCC 6.3.0 toolchain
-- **Windows GDI** — Powers the BGI graphics compatibility layer
-- **Inno Setup** — Professional Windows installer
+- [Python / Tkinter](https://www.python.org/)
+- [MinGW](https://www.mingw-w64.org/)
+- Windows GDI
+- NSIS
