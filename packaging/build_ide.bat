@@ -90,6 +90,10 @@ if errorlevel 1 (
     exit /b 1
 )
 
+rem Clean previous dist output to ensure fresh build
+echo Cleaning previous dist output...
+if exist "%OUT%" rmdir /s /q "%OUT%" 2>nul
+
 echo === [1/3] windres: compiling packaging\app.rc ==="
 "%WINDRES%" --preprocessor="gcc -E -xc -DRC_INVOKED" ^
     "packaging/app.rc" -O coff -o "build\app.res"
@@ -117,6 +121,7 @@ xcopy /e /i /y include  "%OUT%\include"  >nul
 xcopy /e /i /y runtime  "%OUT%\runtime"  >nul
 xcopy /e /i /y examples "%OUT%\examples" >nul
 if not exist "%OUT%\icons\app.ico" xcopy /e /i /y icons "%OUT%\icons" >nul
+copy /y version.txt "%OUT%\version.txt" >nul
 
 echo.
 echo === Done ===

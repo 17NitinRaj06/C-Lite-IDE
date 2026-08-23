@@ -234,6 +234,7 @@ void bar3d(int left, int top, int right, int bottom, int depth, int topflag);
 void circle(int x, int y, int radius);
 void arc(int x, int y, int stangle, int endangle, int radius);
 void ellipse(int x, int y, int stangle, int endangle, int xradius, int yradius);
+void fillellipse(int x, int y, int xradius, int yradius);
 void drawpoly(int numpoints, int *polypoints);
 void fillpoly(int numpoints, int *polypoints);
 void pieslice(int x, int y, int stangle, int endangle, int radius);

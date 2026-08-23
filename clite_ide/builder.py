@@ -133,7 +133,7 @@ class Builder:
             cmd += objs
         for inc in self.toolchain_include(driver):
             cmd += ["-I", inc]
-        std = "-std=gnu++14" if self.gcc_driver(sources) else "-std=gnu99"
+        std = "-std=gnu++17" if self.gcc_driver(sources) else "-std=gnu99"
         cmd += [std, "-O0", "-g", "-Wall"]
         extra = (self.settings.get("extra_flags", "") or "").strip()
         if extra:

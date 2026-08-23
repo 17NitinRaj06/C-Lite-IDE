@@ -5,7 +5,7 @@ import os
 
 PROJECT_FILE = "project.json"
 
-DEFAULT_MAIN = """\
+DEFAULT_MAIN_C = """\
 #include <stdio.h>
 #include <conio.h>
 
@@ -14,6 +14,16 @@ int main()
     printf("Hello, World!\\n");
     printf("Press any key to exit...\\n");
     getch();
+    return 0;
+}
+"""
+
+DEFAULT_MAIN_CPP = """\
+#include <iostream>
+
+int main()
+{
+    std::cout << "Hello, World!" << std::endl;
     return 0;
 }
 """
@@ -115,15 +125,22 @@ class Project:
         return out
 
 
-def create_project(directory, name):
+def create_project(directory, name, language="c"):
     os.makedirs(os.path.join(directory, "src"), exist_ok=True)
     os.makedirs(os.path.join(directory, "include"), exist_ok=True)
     os.makedirs(os.path.join(directory, "assets"), exist_ok=True)
     os.makedirs(os.path.join(directory, "build"), exist_ok=True)
-    main_path = os.path.join(directory, "src", "main.c")
-    if not os.path.isfile(main_path):
-        with open(main_path, "w", encoding="utf-8", newline="\n") as fh:
-            fh.write(DEFAULT_MAIN)
-    project = Project(directory, name=name, files=["src/main.c"])
+    if language.lower() == "cpp":
+        main_path = os.path.join(directory, "src", "main.cpp")
+        if not os.path.isfile(main_path):
+            with open(main_path, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(DEFAULT_MAIN_CPP)
+        project = Project(directory, name=name, files=["src/main.cpp"])
+    else:
+        main_path = os.path.join(directory, "src", "main.c")
+        if not os.path.isfile(main_path):
+            with open(main_path, "w", encoding="utf-8", newline="\n") as fh:
+                fh.write(DEFAULT_MAIN_C)
+        project = Project(directory, name=name, files=["src/main.c"])
     project.save()
     return project

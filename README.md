@@ -1,10 +1,62 @@
+<div align="center">
+
 # C-Lite IDE
 
-A lightweight, offline C/C++ IDE for Windows focused on a simple, student-friendly development experience with Turbo C/Borland-style compatibility.
+**A lightweight, offline C/C++ IDE for Windows with Turbo C / Borland-style compatibility**
 
-C-Lite includes a bundled MinGW toolchain, a tabbed code editor, integrated build/run tools, terminal support, and compatibility layers for `graphics.h` and `conio.h`.
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](#releases)
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D6)](#compatibility)
+[![Toolchain](https://img.shields.io/badge/MinGW-GCC%206.3.0%20(32--bit)-orange)](#compiler-and-runtime)
+[![License](https://img.shields.io/badge/license-see%20LICENSE-lightgrey)](#license)
 
-**Current version:** 1.0.0
+**[Website](https://clite.vercel.app/) · [Download Latest Release](#releases) · [Report an Issue](../../issues)**
+
+</div>
+
+---
+
+C-Lite is a simple, student-friendly development environment for C and C++ on Windows. It ships with a bundled MinGW toolchain, a tabbed code editor, integrated build/run tools, an in-app terminal, and compatibility layers for `graphics.h` and `conio.h` — so classic Turbo C / Borland-style programs run without modification.
+
+## Screenshots
+
+<table>
+<tr>
+<td width="55%">
+
+**Editor with live graphics output**
+Turbo C-style `graphics.h` programs run natively through C-Lite's built-in GDI graphics runtime, with the editor, compile log, and terminal all in one window.
+
+</td>
+<td width="45%">
+<img src="screenshots/graphics-demo.png" alt="C-Lite IDE editor running a graphics.h rainbow demo" width="100%">
+</td>
+</tr>
+<tr>
+<td width="55%">
+
+**Simple Windows installer**
+A guided NSIS-based setup installs the IDE, bundled MinGW compiler, compatibility headers, graphics/console runtime, and example programs — no separate Python or compiler install required.
+
+</td>
+<td width="45%">
+<img src="screenshots/installer.png" alt="C-Lite IDE Windows installer welcome screen" width="100%">
+</td>
+</tr>
+</table>
+
+## Table of Contents
+
+- [Highlights](#highlights)
+- [Compatibility](#compatibility)
+- [Getting Started](#getting-started)
+- [Building](#building)
+- [Project Structure](#project-structure)
+- [Compiler and Runtime](#compiler-and-runtime)
+- [Testing](#testing)
+- [Releases](#releases)
+- [License](#license)
+- [Author](#author)
+- [Acknowledgments](#acknowledgments)
 
 ## Highlights
 
@@ -42,6 +94,10 @@ The packaged application does not require Python or a separate compiler installa
 
 ## Getting Started
 
+### Download (recommended)
+
+Grab the latest installer from the [C-Lite IDE website](https://clite.vercel.app/) or the project's [GitHub Releases](../../releases) page, then run `C-Lite-IDE-Setup-<version>.exe` and follow the setup wizard.
+
 ### Run from source
 
 ```cmd
@@ -57,8 +113,6 @@ start.bat
 ```
 
 ### Using the installer
-
-For end users, use the latest `C-Lite-IDE-Setup-<version>.exe` from the project's GitHub Releases page.
 
 The installer provides:
 
@@ -135,23 +189,23 @@ C-Lite-IDE/
 │   └── examples.py      # Example program catalog
 ├── compiler/
 │   └── mingw/           # Bundled MinGW GCC 6.3.0 toolchain
-├── include/             # C-Lite compatibility headers
+├── include/              # C-Lite compatibility headers
 ├── runtime/
-│   ├── bgilite.c        # graphics.h / BGI compatibility runtime
-│   ├── conio_lite.c     # conio.h compatibility runtime
-│   └── clite_startup.c  # Runtime startup support
+│   ├── bgilite.c         # graphics.h / BGI compatibility runtime
+│   ├── conio_lite.c      # conio.h compatibility runtime
+│   └── clite_startup.c   # Runtime startup support
 ├── examples/
-│   ├── console/         # Console examples
-│   └── graphics/        # Graphics examples
-├── icons/               # Application icons
-├── packaging/           # Build and installer scripts
-├── tests/               # Automated and smoke tests
-├── clite.py             # Application entry point
-├── version.txt          # Release version
-├── settings.json        # User settings (created at runtime)
-├── C-Lite IDE.spec      # PyInstaller specification
-├── start.bat            # Windows launcher
-└── README.md            # Project documentation
+│   ├── console/          # Console examples
+│   └── graphics/         # Graphics examples
+├── icons/                # Application icons
+├── packaging/            # Build and installer scripts
+├── tests/                # Automated and smoke tests
+├── clite.py              # Application entry point
+├── version.txt           # Release version
+├── settings.json         # User settings (created at runtime)
+├── C-Lite IDE.spec        # PyInstaller specification
+├── start.bat             # Windows launcher
+└── README.md             # Project documentation
 ```
 
 ## Compiler and Runtime
@@ -167,9 +221,7 @@ The compiler discovery order is:
 
 ### Graphics compatibility
 
-The graphics runtime provides a Windows GDI implementation of the classic BGI API.
-
-It supports common Turbo C graphics functionality including:
+The graphics runtime provides a Windows GDI implementation of the classic BGI API, supporting common Turbo C graphics functionality including:
 
 - Lines, circles, rectangles, ellipses, arcs, sectors, and pies
 - Polygons and filled polygons
@@ -183,10 +235,10 @@ It supports common Turbo C graphics functionality including:
 The historical BGI driver path used by programs such as:
 
 ```c
-initgraph(&gd, &gm, "C:\TURBOC3\BGI");
+initgraph(&gd, &gm, "C:\\TURBOC3\\BGI");
 ```
 
-is accepted for compatibility but is not required. C-Lite supplies its own runtime.
+is accepted for compatibility but is not required — C-Lite supplies its own runtime.
 
 ### Conio compatibility
 
@@ -208,11 +260,11 @@ C-Lite implements commonly used Turbo C console functions including:
 Run the test suite from the project root:
 
 ```cmd
-python tests	est_tabs.py
-python tests	est_close_state.py
-python tests	est_dialog_center.py
-python tests	est_statusbar.py
-python tests	est_explorer.py
+python tests\test_tabs.py
+python tests\test_close_state.py
+python tests\test_dialog_center.py
+python tests\test_statusbar.py
+python tests\test_explorer.py
 python tests\smoke.py
 python tests\e2e.py
 python tests\input_test.py
@@ -235,20 +287,24 @@ For release builds, verify at minimum:
 
 ## Releases
 
-C-Lite follows [Semantic Versioning](https://semver.org/).
+C-Lite follows [Semantic Versioning](https://semver.org/):
 
 ```text
 MAJOR.MINOR.PATCH
 ```
 
-Examples:
+| Version | Notes |
+|---|---|
+| **1.0.0** | Initial release — current version, tracked in `version.txt` |
+
+> Additional installer builds placed in `release/` (e.g. `C-Lite-IDE-Setup-<version>.exe`) should be added to this table as they're published. Download the latest build from the [website](https://clite.vercel.app/) or the [GitHub Releases](../../releases) page.
+
+Versioning conventions:
 
 - `1.0.0` — Initial release
 - `1.0.1` — Bug fixes
 - `1.1.0` — Backward-compatible features
 - `2.0.0` — Breaking changes
-
-The version is maintained in `version.txt` and used by the application and release pipeline.
 
 ### Release checklist
 
@@ -264,7 +320,7 @@ The version is maintained in `version.txt` and used by the application and relea
 
 ## License
 
-This project is distributed under the license included in the repository's `LICENSE` file.
+This project is distributed under the license included in the repository's [`LICENSE`](LICENSE) file.
 
 ## Author
 
@@ -272,6 +328,7 @@ This project is distributed under the license included in the repository's `LICE
 
 - [LinkedIn](https://www.linkedin.com/in/nitin-raj-17d12/)
 - [Portfolio](https://nitin-raj-vercel.app)
+- [C-Lite IDE Website](https://clite.vercel.app/)
 
 ## Acknowledgments
 

@@ -13,7 +13,7 @@ def list_examples():
         if not os.path.isdir(directory):
             continue
         for fname in sorted(os.listdir(directory)):
-            if fname.lower().endswith(".c"):
+            if fname.lower().endswith((".c", ".cpp", ".cc", ".cxx")):
                 title = (os.path.splitext(fname)[0]
                          .replace("_", " ").title())
                 result.append((category, title,

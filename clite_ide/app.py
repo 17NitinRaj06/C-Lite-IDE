@@ -350,9 +350,10 @@ class App:
 
     def open_dialog(self):
         path = filedialog.askopenfilename(
-            parent=self.root, title="Open C File",
-            filetypes=[("C source", "*.c"), ("C/C++ source",
-                       "*.c *.h *.cpp *.cc *.cxx"),
+            parent=self.root, title="Open Source File",
+            filetypes=[("C source", "*.c"), ("C++ source",
+                       "*.cpp *.cc *.cxx *.c++"),
+                       ("C/C++ source", "*.c *.h *.cpp *.cc *.cxx *.c++"),
                        ("All files", "*.*")])
         if path:
             self.open_file(path)
@@ -462,9 +463,12 @@ class App:
         if not ed:
             return
         path = filedialog.asksaveasfilename(
-            parent=self.root, title="Save C File",
+            parent=self.root, title="Save Source File",
             defaultextension=".c",
-            filetypes=[("C source", "*.c"), ("All files", "*.*")])
+            filetypes=[("C source", "*.c"),
+                       ("C++ source", "*.cpp;*.cc;*.cxx"),
+                       ("C/C++ source", "*.c;*.cpp;*.cc;*.cxx"),
+                       ("All files", "*.*")])
         if not path:
             return
         try:
@@ -532,9 +536,12 @@ class App:
             if ans == "save":
                 if not ed.filepath:
                     path = filedialog.asksaveasfilename(
-                        parent=self.root, title="Save C File",
+                        parent=self.root, title="Save Source File",
                         defaultextension=".c",
-                        filetypes=[("C source", "*.c")])
+                        filetypes=[("C source", "*.c"),
+                                   ("C++ source", "*.cpp;*.cc;*.cxx"),
+                                   ("C/C++ source", "*.c;*.cpp;*.cc;*.cxx"),
+                                   ("All files", "*.*")])
                     if not path:
                         return
                     ed.filepath = path
@@ -765,10 +772,10 @@ class App:
             return
         ctx = self._context()
         if not ctx:
-            self.status_msg("No C file to compile")
-            self.terminal.write_line("Nothing to compile - open a .c file "
+            self.status_msg("No source file to compile")
+            self.terminal.write_line("Nothing to compile - open a source file "
                                      "first.", "err")
-            self.compilelog.note_error("Nothing to compile - open a .c file "
+            self.compilelog.note_error("Nothing to compile - open a source file "
                                        "first.")
             return
         sources, out_exe, build_dir, cwd = ctx
@@ -828,7 +835,7 @@ class App:
             return
         ctx = self._context()
         if not ctx:
-            self.terminal.write_line("Nothing to run - open a .c file "
+            self.terminal.write_line("Nothing to run - open a source file "
                                      "first.", "err")
             return
         sources, out_exe, build_dir, cwd = ctx
@@ -1394,9 +1401,12 @@ class App:
                     return False
                 if ans and not ed.filepath:
                     path = filedialog.asksaveasfilename(
-                        parent=self.root, title="Save C File",
+                        parent=self.root, title="Save Source File",
                         defaultextension=".c",
-                        filetypes=[("C source", "*.c")])
+                        filetypes=[("C source", "*.c"),
+                                   ("C++ source", "*.cpp;*.cc;*.cxx"),
+                                   ("C/C++ source", "*.c;*.cpp;*.cc;*.cxx"),
+                                   ("All files", "*.*")])
                     if not path:
                         return False
                     ed.filepath = path

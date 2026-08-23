@@ -878,7 +878,7 @@ class Editor(ttk.Frame):
     def display_name(self):
         if self.filepath:
             return os.path.basename(self.filepath)
-        return "Untitled.c"
+        return "Untitled"
 
     def focus(self):
         self.content.focus_set()

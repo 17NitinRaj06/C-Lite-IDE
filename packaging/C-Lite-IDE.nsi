@@ -1,7 +1,7 @@
 ; C-Lite IDE - NSIS Installer Script
 ; Creates: C-Lite-IDE-Setup-<version>.exe
 ;
-; Expected structure:
+; Expected structure (relative to this script):
 ; project/
 ; ├── dist/
 ; │   └── C-Lite IDE/
@@ -9,14 +9,13 @@
 ; │   └── app.ico
 ; ├── LICENSE
 ; ├── README.md
-; ├── installer/
+; ├── packaging/
 ; │   └── C-Lite-IDE.nsi
 ; └── build_release.bat
 ;
 ; Usage:
 ;   makensis C-Lite-IDE.nsi
-;
-; VERSION_PLACEHOLDER is replaced by build_release.bat.
+;   (Version is substituted by build_release.bat)
 
 !include "MUI2.nsh"
 
@@ -25,10 +24,10 @@
 ; ------------------------------------------------------------
 
 !define APP_NAME "C-Lite IDE"
-!define APP_PUBLISHER "C-Lite"
+!define APP_PUBLISHER "Nitin Raj"
 !define APP_URL "https://github.com/17NitinRaj06/C-Lite-IDE"
 !define APP_EXE "C-Lite IDE.exe"
-!define APP_VERSION "1.0.0"
+!define APP_VERSION "1.1.0"
 
 ; ------------------------------------------------------------
 ; Installer configuration
@@ -46,6 +45,12 @@ Unicode True
 
 Icon "..\icons\app.ico"
 
+; Maximum compression. /SOLID treats all files as one compressed
+; stream (much better ratio than per-file compression when you
+; have many small files, e.g. a PyInstaller _internal folder).
+SetCompressor /SOLID lzma
+SetCompressorDictSize 64
+
 ; ------------------------------------------------------------
 ; File version information
 ; ------------------------------------------------------------
@@ -56,7 +61,7 @@ VIAddVersionKey /LANG=1033 "CompanyName" "${APP_PUBLISHER}"
 VIAddVersionKey /LANG=1033 "FileDescription" "${APP_NAME} Installer"
 VIAddVersionKey /LANG=1033 "FileVersion" "${APP_VERSION}"
 VIAddVersionKey /LANG=1033 "ProductVersion" "${APP_VERSION}"
-VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright © ${APP_PUBLISHER}"
+VIAddVersionKey /LANG=1033 "LegalCopyright" "Copyright © ${APP_PUBLISHER} 2026"
 
 ; ------------------------------------------------------------
 ; Modern UI
@@ -92,9 +97,9 @@ Section "C-Lite IDE" SecMain
 
     SectionIn RO
 
-    ; Copy the complete built application.
+    ; Copy the complete built application including all subdirectories.
     SetOutPath "$INSTDIR"
-    File /r "..\dist\C-Lite IDE\*.*"
+    File /r "..\dist\C-Lite IDE\*"
 
     ; Store installation information.
     WriteRegStr HKCU "Software\${APP_NAME}" "InstallDir" "$INSTDIR"

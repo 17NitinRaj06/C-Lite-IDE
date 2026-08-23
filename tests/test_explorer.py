@@ -178,9 +178,15 @@ def main():
           os.path.isdir(os.path.join(tmp, "src", "newdir")))
 
     # ---- context menu: Rename updates editor ----
-    exmod.dialogs.ask_string = lambda *a, **k: "renamed.c"
+    # Test inline rename
     ex.tree.selection_set(find_iid(ex, "src/newfile.c"))
-    ex._rename_selected()
+    ex._rename_selected()  # This starts inline rename
+    # Simulate entering new name and pressing Enter
+    entry = ex._rename_entry
+    if entry:
+        entry.delete(0, tk.END)
+        entry.insert(0, "renamed.c")
+        ex._confirm_rename()
     root.update()
     renamed = os.path.join(tmp, "src", "renamed.c")
     check("Rename moved file",

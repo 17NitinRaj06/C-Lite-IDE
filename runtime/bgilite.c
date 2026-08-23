@@ -645,6 +645,28 @@ void ellipse(int x, int y, int stangle, int endangle, int xradius, int yradius)
     clite_refresh();
 }
 
+void fillellipse(int x, int y, int xradius, int yradius)
+{
+    HGDIOBJ op, ob;
+    HPEN pen;
+    HBRUSH br;
+    if (!g_initialized || !g_memdc) return;
+    pen = clite_pen();
+    op = SelectObject(g_memdc, pen);
+    br = clite_fill_brush();
+    SetBkMode(g_memdc, OPAQUE);
+    SetBkColor(g_memdc, clite_color(g_bkcolor));
+    ob = SelectObject(g_memdc, br);
+    Ellipse(g_memdc, clite_dx(x - xradius), clite_dy(y - yradius),
+            clite_dx(x + xradius) + 1, clite_dy(y + yradius) + 1);
+    SelectObject(g_memdc, op);
+    SelectObject(g_memdc, ob);
+    if (br != GetStockObject(NULL_BRUSH))
+        DeleteObject(br);
+    DeleteObject(pen);
+    clite_refresh();
+}
+
 static void clite_polygon(int numpoints, int *polypoints, int fill)
 {
     POINT *pts;

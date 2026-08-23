@@ -1,8 +1,8 @@
 IDI_APP ICON "../icons/app.ico"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,0
- PRODUCTVERSION 1,0,0,0
+ FILEVERSION 1,1,0,0
+ PRODUCTVERSION 1,1,0,0
  FILEFLAGSMASK 0x3fL
  FILEFLAGS 0x0L
  FILEOS 0x40004L
@@ -15,11 +15,11 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "C-Lite"
             VALUE "FileDescription", "C-Lite IDE - Turbo C compatible IDE for C/C++ students"
-            VALUE "FileVersion", "1.0.0"
+            VALUE "FileVersion", "1.1.0"
             VALUE "InternalName", "C-Lite IDE"
             VALUE "OriginalFilename", "C-Lite IDE.exe"
             VALUE "ProductName", "C-Lite IDE"
-            VALUE "ProductVersion", "1.0.0"
+            VALUE "ProductVersion", "1.1.0"
         END
     END
     BLOCK "VarFileInfo"

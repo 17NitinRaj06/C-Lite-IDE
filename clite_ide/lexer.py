@@ -14,6 +14,12 @@ KEYWORDS = {
     "unsigned", "void", "volatile", "while",
     "_Bool", "_Complex", "_Imaginary", "_Alignas", "_Alignof", "_Atomic",
     "_Generic", "_Noreturn", "_Static_assert", "_Thread_local",
+    "class", "namespace", "template", "typename", "public", "private",
+    "protected", "using", "new", "delete", "nullptr", "this", "virtual",
+    "override", "final", "friend", "operator", "explicit", "mutable",
+    "constexpr", "decltype", "noexcept", "thread_local", "static_assert",
+    "alignas", "alignof", "concept", "requires", "co_await", "co_yield",
+    "co_return", "char8_t", "char16_t", "char32_t", "bool", "wchar_t",
 }
 
 TYPES = {
@@ -21,6 +27,11 @@ TYPES = {
     "int8_t", "int16_t", "int32_t", "int64_t", "uint8_t", "uint16_t",
     "uint32_t", "uint64_t", "FILE", "va_list", "wchar_t", "int8_t",
     "time_t", "clock_t", "fpos_t", "div_t", "ldiv_t", "jmp_buf",
+    "string", "vector", "map", "set", "list", "deque", "array",
+    "shared_ptr", "unique_ptr", "weak_ptr", "optional", "variant",
+    "any", "tuple", "pair", "function", "chrono", "thread", "mutex",
+    "atomic", "condition_variable", "future", "promise", "iostream",
+    "fstream", "sstream", "istream", "ostream", "streambuf",
 }
 
 CONSTANTS = {
