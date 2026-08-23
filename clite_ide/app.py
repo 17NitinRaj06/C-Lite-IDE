@@ -948,7 +948,7 @@ class App:
         import os
 
         # Read GitHub configuration from github_config.ini
-        github_owner = "YOUR_GITHUB_USERNAME"
+        github_owner = "17NitinRaj06"
         github_repo = "C-Lite-IDE"
         config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "github_config.ini")
         try:
