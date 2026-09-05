@@ -5,6 +5,7 @@ import os
 import subprocess
 import threading
 import time
+import tkinter as tk
 
 CREATE_NO_WINDOW = 0x08000000
 
@@ -15,6 +16,8 @@ class Runner:
         self.process = None
         self.start_time = 0.0
         self._stop_requested = False
+        self._run_lock = threading.Lock()
+        self._timer_id = None
 
     def is_running(self):
         return self.process is not None and self.process.poll() is None
@@ -25,7 +28,16 @@ class Runner:
         The process is created on a background thread so a slow first-run
         startup (e.g. antivirus scanning a freshly built executable) never
         freezes the UI."""
-        self.stop()
+        # Guard: only one run at a time
+        if not self._run_lock.acquire(blocking=False):
+            self.app.root.after(0, self.app.terminal.note_error,
+                                "A program is already running. Stop it first.")
+            return
+
+        # Stop any previously running process
+        if self.is_running():
+            self._do_stop()
+
         self._stop_requested = False
         terminal = self.app.terminal
         terminal.begin_run("Running: %s" % os.path.basename(exe_path))
@@ -48,6 +60,7 @@ class Runner:
                     0, terminal.note_error,
                     "Failed to start program: %s" % exc)
                 self.app.root.after(0, self.app.set_running_state, False)
+                self._run_lock.release()
                 return
 
             if self._stop_requested:
@@ -55,11 +68,23 @@ class Runner:
                     proc.terminate()
                 except OSError:
                     pass
+                self._run_lock.release()
                 return
 
             self.process = proc
             self.app.root.after(0, terminal.set_process, proc)
             self.app.root.after(0, terminal.entry.focus_set)
+
+            # Wire up run_timeout
+            timeout = self.app.settings.get("run_timeout", 0)
+            if timeout and timeout > 0:
+                def _timeout_kill():
+                    if self.process and self.process.poll() is None:
+                        terminal.note_error(
+                            "Timed out after %ds — killed." % timeout)
+                        self._do_stop()
+                self._timer_id = self.app.root.after(
+                    timeout * 1000, _timeout_kill)
 
             def read_output():
                 try:
@@ -76,11 +101,20 @@ class Runner:
                 code = proc.wait()
                 elapsed = time.time() - self.start_time
                 self.process = None
+                if self._timer_id is not None:
+                    try:
+                        self.app.root.after_cancel(self._timer_id)
+                    except (tk.TclError, ValueError):
+                        pass
+                    self._timer_id = None
+                self.app.root.after(
+                    0, terminal._flush)
                 self.app.root.after(
                     0, terminal.end_run, code)
                 self.app.root.after(0, self.app.set_running_state, False)
                 self.app.root.after(0, self.app.on_run_finished, code,
                                     elapsed)
+                self._run_lock.release()
 
             threading.Thread(target=read_output, daemon=True).start()
             threading.Thread(target=wait_exit, daemon=True).start()
@@ -97,7 +131,12 @@ class Runner:
                 pass
 
     def stop(self):
+        """Public stop entry point."""
         self._stop_requested = True
+        self._do_stop()
+
+    def _do_stop(self):
+        """Actually kill the running process."""
         if not self.process:
             return
         proc = self.process

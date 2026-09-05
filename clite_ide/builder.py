@@ -193,42 +193,9 @@ class Builder:
                 p["severity"] == "error" for p in result.problems)
             if result.success:
                 result.exe_path = out_exe
-                self._warm_exe(out_exe)
             self.app.root.after(0, lambda: on_finish(result))
 
         threading.Thread(target=work, daemon=True).start()
-
-    # ------------------------------------------------------------------
-
-    def _warm_exe(self, exe_path):
-        """Trigger the antivirus first-run scan of a freshly built exe so
-        the user's first Run is not slowed by it.  The process is created
-        suspended and terminated without running any user code; this
-        forces Windows Defender (and similar) to scan the image while the
-        build is still in progress.  Runs on the build thread."""
-        try:
-            p = subprocess.Popen(
-                [exe_path],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                cwd=os.path.dirname(exe_path) or None,
-                env=self.runtime_env(),
-                creationflags=subprocess.CREATE_NO_WINDOW |
-                0x4)  # CREATE_SUSPENDED
-            try:
-                p.terminate()
-            except OSError:
-                pass
-            try:
-                p.wait(timeout=20)
-            except subprocess.TimeoutExpired:
-                try:
-                    p.kill()
-                except OSError:
-                    pass
-        except Exception:
-            pass
 
     # ------------------------------------------------------------------
 

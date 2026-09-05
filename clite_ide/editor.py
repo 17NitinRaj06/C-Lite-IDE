@@ -46,6 +46,9 @@ class Editor(ttk.Frame):
         self._folded = set()
         self._find_text = ""
         self._skip_next_modified = False
+        self._pending_highlight_id = None
+        self._pending_gutter_id = None
+        self._pending_folds_id = None
 
         self._font = self._make_font()
 
@@ -533,16 +536,40 @@ class Editor(ttk.Frame):
             return
         self._in_refresh = True
         try:
-            self._update_gutter()
-            self._highlight()
-            self._update_folds_cache()
-            self._redraw_folds()
             self._match_bracket()
             self._update_line_highlight()
             self._notify()
         finally:
             self._in_refresh = False
             self.content.edit_modified(False)
+        # Debounce: collapse rapid keystrokes into one highlighting pass
+        self._schedule_highlight()
+        self._schedule_gutter()
+        self._schedule_folds()
+
+    def _schedule_highlight(self, ms=30):
+        if self._pending_highlight_id is not None:
+            self.after_cancel(self._pending_highlight_id)
+        self._pending_highlight_id = self.after(ms, self._do_highlighted_refresh)
+
+    def _schedule_gutter(self, ms=50):
+        if self._pending_gutter_id is not None:
+            self.after_cancel(self._pending_gutter_id)
+        self._pending_gutter_id = self.after(ms, self._update_gutter)
+
+    def _schedule_folds(self, ms=80):
+        if self._pending_folds_id is not None:
+            self.after_cancel(self._pending_folds_id)
+        self._pending_folds_id = self.after(ms, self._update_folds_and_redraw)
+
+    def _do_highlighted_refresh(self):
+        self._pending_highlight_id = None
+        self._highlight()
+
+    def _update_folds_and_redraw(self):
+        self._pending_folds_id = None
+        self._update_folds_cache()
+        self._redraw_folds()
 
     def _notify(self):
         if self.on_cursor:
@@ -553,12 +580,53 @@ class Editor(ttk.Frame):
             self.on_dirty(self, self.is_dirty())
 
     def _highlight(self):
+        """Re-apply syntax highlighting.  Only re-tags the line range
+        around the cursor (expanded to cover multi-line constructs) to
+        avoid O(tokens * chars) work on every keystroke."""
         text = self.content.get("1.0", "end-1c")
-        self.content.tag_remove("syn", "1.0", "end")
+        nlines = text.count("\n") + 1
+
+        # Determine the range of lines that might have changed.
+        # Use the cursor line +/- a generous margin to cover
+        # multi-line block comments / strings.
+        try:
+            cursor_line = int(self.content.index("insert").split(".")[0])
+        except tk.TclError:
+            cursor_line = 1
+        RANGE = 80
+        start_line = max(1, cursor_line - RANGE)
+        end_line = min(nlines, cursor_line + RANGE)
+
+        # Clear tags only in the affected region
+        start_idx = "%d.0" % start_line
+        end_idx = "%d.end" % end_line
+        self.content.tag_remove("syn", start_idx, end_idx)
         for kind in SYNTAX_KINDS:
-            self.content.tag_remove(kind, "1.0", "end")
-        for start, end, kind in colorize(text):
-            self.content.tag_add(kind, f"1.0+{start}c", f"1.0+{end}c")
+            self.content.tag_remove(kind, start_idx, end_idx)
+
+        # Extract the text for the affected region and tokenize
+        region_start_char = len(text[:text.index("\n", 0)] + "\n") if start_line > 1 else 0
+        lines = text.split("\n")
+        region_text = "\n".join(lines[start_line - 1:end_line])
+        offset_char = sum(len(l) + 1 for l in lines[:start_line - 1])
+
+        for start, end, kind in colorize(region_text):
+            abs_start = start + offset_char
+            abs_end = end + offset_char
+            # Convert absolute char offset to line.col index
+            s_line, s_col = self._char_to_linecol(text, abs_start)
+            e_line, e_col = self._char_to_linecol(text, abs_end)
+            self.content.tag_add(kind, f"{s_line}.{s_col}",
+                                 f"{e_line}.{e_col}")
+
+    @staticmethod
+    def _char_to_linecol(text, pos):
+        """Convert an absolute character offset to (line, col) 1-based."""
+        pos = min(pos, len(text))
+        line = text.count("\n", 0, pos) + 1
+        last_nl = text.rfind("\n", 0, pos)
+        col = pos - (last_nl + 1)
+        return (line, col)
 
     def _update_gutter(self):
         nlines = int(self.content.index("end-1c").split(".")[0])

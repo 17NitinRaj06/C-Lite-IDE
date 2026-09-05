@@ -27,7 +27,7 @@
 !define APP_PUBLISHER "Nitin Raj"
 !define APP_URL "https://github.com/17NitinRaj06/C-Lite-IDE"
 !define APP_EXE "C-Lite IDE.exe"
-!define APP_VERSION "1.1.0"
+!define APP_VERSION "1.1.1"
 
 ; ------------------------------------------------------------
 ; Installer configuration
@@ -132,6 +132,18 @@ Section "C-Lite IDE" SecMain
     ; Create uninstaller.
     WriteUninstaller "$INSTDIR\Uninstall.exe"
 
+    ; ------------------------------------------------------------
+    ; File association ("Open with" candidate only — not default)
+    ; ------------------------------------------------------------
+    WriteRegStr HKCU "Software\Classes\Applications\${APP_EXE}\shell\open\command" "" '"$INSTDIR\${APP_EXE}" "%1"'
+    WriteRegStr HKCU "Software\Classes\Applications\${APP_EXE}\SupportedTypes" ".c" ""
+    WriteRegStr HKCU "Software\Classes\Applications\${APP_EXE}\SupportedTypes" ".cpp" ""
+    WriteRegStr HKCU "Software\Classes\Applications\${APP_EXE}\SupportedTypes" ".cc" ""
+    WriteRegStr HKCU "Software\Classes\Applications\${APP_EXE}\SupportedTypes" ".cxx" ""
+    WriteRegStr HKCU "Software\Classes\Applications\${APP_EXE}\SupportedTypes" ".h" ""
+    WriteRegStr HKCU "Software\Classes\Applications\${APP_EXE}\FriendlyAppName" "" "${APP_NAME}"
+    System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)'
+
     ; Windows uninstall information.
     WriteRegStr HKCU \
         "Software\Microsoft\Windows\CurrentVersion\Uninstall\C-Lite-IDE" \
@@ -179,5 +191,9 @@ Section "Uninstall"
     DeleteRegKey HKCU "Software\${APP_NAME}"
     DeleteRegKey HKCU \
         "Software\Microsoft\Windows\CurrentVersion\Uninstall\C-Lite-IDE"
+
+    ; Remove file association registration.
+    DeleteRegKey HKCU "Software\Classes\Applications\${APP_EXE}"
+    System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)'
 
 SectionEnd

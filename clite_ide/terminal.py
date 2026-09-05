@@ -5,6 +5,9 @@ from tkinter import ttk
 
 from .settings import THEMES
 
+MAX_TERMINAL_LINES = 5000
+_WRITE_BATCH_MS = 50
+
 
 class Terminal(ttk.Frame):
     def __init__(self, master, settings, on_input=None):
@@ -13,6 +16,8 @@ class Terminal(ttk.Frame):
         self.on_input = on_input
         self.process = None
         self._running = False
+        self._pending_text = ""
+        self._flush_id = None
 
         self.text = tk.Text(self, wrap="char", state="disabled", bd=0,
                             padx=6, pady=4, insertwidth=0,
@@ -61,10 +66,30 @@ class Terminal(ttk.Frame):
         self.text.configure(state="disabled")
 
     def write(self, data):
+        """Buffer incoming data and flush in batches to avoid flooding
+        the Tk event queue with individual write events."""
+        self._pending_text += data
+        if self._flush_id is None:
+            self._flush_id = self.after(_WRITE_BATCH_MS, self._flush)
+
+    def _flush(self):
+        self._flush_id = None
+        text = self._pending_text
+        if not text:
+            return
+        self._pending_text = ""
         self.text.configure(state="normal")
-        self.text.insert("end", data)
+        self.text.insert("end", text)
+        self._trim_buffer()
         self.text.see("end")
         self.text.configure(state="disabled")
+
+    def _trim_buffer(self):
+        """Trim oldest lines if buffer exceeds MAX_TERMINAL_LINES."""
+        nlines = int(self.text.index("end-1c").split(".")[0])
+        if nlines > MAX_TERMINAL_LINES:
+            excess = nlines - MAX_TERMINAL_LINES
+            self.text.delete("1.0", f"{excess + 1}.0")
 
     def write_line(self, data, tag=None):
         self.text.configure(state="normal")

@@ -67,7 +67,7 @@ echo Generating packaging\app.rc with version %VERSION%...
     echo         BLOCK "040904b0"
     echo         BEGIN
     echo             VALUE "CompanyName", "C-Lite"
-    echo             VALUE "FileDescription", "C-Lite IDE - Turbo C compatible IDE for C/C++ students"
+    echo             VALUE "FileDescription", "C-Lite IDE"
     echo             VALUE "FileVersion", "%VERSION%"
     echo             VALUE "InternalName", "C-Lite IDE"
     echo             VALUE "OriginalFilename", "C-Lite IDE.exe"

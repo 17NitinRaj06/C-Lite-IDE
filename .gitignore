@@ -37,6 +37,7 @@ Desktop.ini
 
 # User settings (generated on first run)
 settings.json
+context.md
 
 # Test executables and output (if any)
 tests/*.exe

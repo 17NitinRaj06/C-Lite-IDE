@@ -3,10 +3,13 @@
 import json
 import os
 import shutil
+import subprocess
 
-from . import ROOT, COMPILER_DIR, BUNDLED_GCC
+from . import ROOT, COMPILER_DIR, BUNDLED_GCC, USER_DATA_DIR
 
-SETTINGS_FILE = os.path.join(ROOT, "settings.json")
+# Settings live in the writable user-data directory.
+os.makedirs(USER_DATA_DIR, exist_ok=True)
+SETTINGS_FILE = os.path.join(USER_DATA_DIR, "settings.json")
 
 # Fallback locations only consulted when neither the bundled toolchain,
 # the user-configured path, nor PATH has a usable gcc.
@@ -183,15 +186,23 @@ class Settings:
             if os.path.isfile(SETTINGS_FILE):
                 with open(SETTINGS_FILE, "r", encoding="utf-8") as fh:
                     self.data = _merge(DEFAULT_SETTINGS, json.load(fh))
-        except Exception:
+        except (json.JSONDecodeError, OSError) as exc:
+            self._notify_error("Could not load settings: %s" % exc)
             self.data = dict(DEFAULT_SETTINGS)
 
     def save(self):
         try:
+            os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
             with open(SETTINGS_FILE, "w", encoding="utf-8") as fh:
                 json.dump(self.data, fh, indent=2)
-        except Exception:
-            pass
+        except (OSError, TypeError) as exc:
+            self._notify_error("Could not save settings: %s" % exc)
+
+    @staticmethod
+    def _notify_error(msg):
+        """Log to stderr so it is visible in dev-mode or log files."""
+        import sys
+        print("settings warning: %s" % msg, file=sys.stderr)
 
     def get(self, key, default=None):
         return self.data.get(key, default)
@@ -210,15 +221,15 @@ def find_gcc(custom_path=""):
     """Locate a usable gcc executable.
 
     Priority:
-      1. bundled toolchain (compiler\\mingw)
-      2. user-configured path from Settings
+      1. user-configured path from Settings (if set and valid)
+      2. bundled toolchain (compiler\\mingw)
       3. gcc on PATH
       4. other common install locations
     """
-    if os.path.isfile(BUNDLED_GCC):
-        return BUNDLED_GCC
     if custom_path and os.path.isfile(custom_path):
         return custom_path
+    if os.path.isfile(BUNDLED_GCC):
+        return BUNDLED_GCC
     found = shutil.which("gcc")
     if found:
         return found
@@ -231,13 +242,13 @@ def find_gcc(custom_path=""):
 def compiler_source(custom_path=""):
     """Return (gcc_path, source_label) describing where the compiler is.
 
-    source_label is one of "bundled", "custom", "path", "auto" or None
+    source_label is one of "custom", "bundled", "path", "auto" or None
     when no compiler is found.
     """
-    if os.path.isfile(BUNDLED_GCC):
-        return BUNDLED_GCC, "bundled"
     if custom_path and os.path.isfile(custom_path):
         return custom_path, "custom"
+    if os.path.isfile(BUNDLED_GCC):
+        return BUNDLED_GCC, "bundled"
     found = shutil.which("gcc")
     if found:
         return found, "path"
@@ -268,10 +279,13 @@ def toolchain_bin(gcc):
 def gcc_version(gcc):
     """Return a short version string for the given gcc path, or None."""
     try:
-        out = os.popen('"%s" --version' % gcc).read().splitlines()
-        for line in out:
+        result = subprocess.run(
+            [gcc, "--version"],
+            capture_output=True, text=True,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        for line in (result.stdout or "").splitlines():
             if "gcc" in line.lower():
                 return line.strip()
-    except Exception:
+    except (OSError, ValueError):
         pass
     return None

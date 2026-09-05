@@ -1,10 +1,11 @@
 """C-Lite IDE main application window."""
 
 import os
+import sys
 import tkinter as tk
 from tkinter import filedialog, ttk
 
-from . import APP_NAME, APP_VERSION, dialogs
+from . import APP_NAME, APP_VERSION, USER_DATA_DIR, dialogs
 from .builder import Builder
 from .compilelog import CompileLog
 from .dpi import enable_dpi_awareness
@@ -39,7 +40,7 @@ MENU_SHORTCUTS = [
 
 
 class App:
-    def __init__(self, root):
+    def __init__(self, root, startup_files=None):
         self.root = root
         self.settings = Settings()
         self.project = None
@@ -79,8 +80,36 @@ class App:
         self.notebook.bind("<<NotebookTabChanged>>",
                            self._on_notebook_tab_changed)
         self._update_compiler_status()
-        self.new_file()
+
+        # Open files passed on the command line, or fall back to a
+        # blank tab if none were provided or all failed validation.
+        opened = self._open_startup_files(startup_files)
+        if not opened:
+            self.new_file()
         self._update_title()
+
+    # ------------------------------------------------------------------
+    #  startup file handling
+    # ------------------------------------------------------------------
+
+    def _open_startup_files(self, paths):
+        """Open each path from sys.argv in a new tab.  Returns True if
+        at least one file was opened successfully.  Shows an error
+        dialog for each path that doesn't exist."""
+        if not paths:
+            return False
+        opened_any = False
+        for path in paths:
+            path = os.path.abspath(path)
+            if not os.path.isfile(path):
+                dialogs.show_error(
+                    self.root, "Open",
+                    "File not found:\n%s" % path)
+                continue
+            ed = self.open_file(path)
+            if ed:
+                opened_any = True
+        return opened_any
 
     # ------------------------------------------------------------------
     #  construction helpers
@@ -740,7 +769,8 @@ class App:
         if not ed or not ed.filepath:
             return None
         src = ed.filepath
-        build_dir = os.path.join(os.path.dirname(src), "build")
+        build_dir = os.path.join(USER_DATA_DIR, "build",
+                                 os.path.splitext(os.path.basename(src))[0])
         exe = os.path.join(build_dir,
                            os.path.splitext(os.path.basename(src))[0]
                            + ".exe")
@@ -750,11 +780,65 @@ class App:
         if not os.path.isfile(exe_path):
             return True
         exe_mtime = os.path.getmtime(exe_path)
+        # Check source files
         for s in sources:
             if os.path.isfile(s) and \
                     os.path.getmtime(s) > exe_mtime:
                 return True
+        # Check local header dependencies
+        all_headers = self._collect_headers(sources)
+        for h in all_headers:
+            if os.path.isfile(h) and \
+                    os.path.getmtime(h) > exe_mtime:
+                return True
+        # Invalidate if build settings changed since last build
+        if self._build_settings_changed():
+            return True
         return False
+
+    def _collect_headers(self, sources):
+        """Scan source files for #include "..." of local headers and
+        return their absolute paths (recursively)."""
+        import re
+        include_re = re.compile(r'^\s*#\s*include\s+"([^"]+)"', re.MULTILINE)
+        visited = set()
+        result = []
+        queue = list(sources)
+        while queue:
+            src = queue.pop(0)
+            src_dir = os.path.dirname(src)
+            try:
+                with open(src, "r", encoding="utf-8", errors="replace") as fh:
+                    text = fh.read()
+            except OSError:
+                continue
+            for m in include_re.finditer(text):
+                inc = os.path.normpath(os.path.join(src_dir, m.group(1)))
+                if inc not in visited:
+                    visited.add(inc)
+                    result.append(inc)
+                    queue.append(inc)
+        return result
+
+    def _build_settings_changed(self):
+        """Return True if the compiler path or extra_flags differ from
+        what was last used for a build."""
+        gcc = self.settings.get("compiler_path", "")
+        flags = self.settings.get("extra_flags", "")
+        key = (gcc, flags)
+        if not hasattr(self, "_last_build_settings"):
+            self._last_build_settings = None
+        changed = self._last_build_settings is not None and \
+                  self._last_build_settings != key
+        return changed
+
+    def _record_build_settings(self):
+        """Snapshot the current compiler path + extra_flags after a
+        successful build so we can detect changes later."""
+        self._last_build_settings = (
+            self.settings.get("compiler_path", ""),
+            self.settings.get("extra_flags", ""),
+        )
 
     def _save_all_dirty(self):
         for holder in self.notebook.tabs():
@@ -763,8 +847,10 @@ class App:
             if ed and ed.is_dirty() and ed.filepath:
                 try:
                     ed.save_file(ed.filepath)
-                except OSError:
-                    pass
+                except OSError as exc:
+                    dialogs.show_error(self.root, "Save",
+                                       "Could not save %s:\n%s"
+                                       % (ed.display_name(), exc))
 
     def compile_current(self, run_after=False):
         if self.build_busy:
@@ -782,7 +868,16 @@ class App:
         if self.settings.get("auto_save_before_build", True):
             self._save_all_dirty()
 
-        os.makedirs(build_dir, exist_ok=True)
+        try:
+            os.makedirs(build_dir, exist_ok=True)
+        except OSError as exc:
+            self.status_msg("Could not create build directory")
+            self.terminal.write_line(
+                "Could not create build directory: %s" % exc, "err")
+            self.compilelog.note_error(
+                "Could not create build directory: %s" % exc)
+            return
+
         self.build_busy = True
         self.status_msg("Compiling...")
         self.tb_compile.configure(state="disabled")
@@ -815,6 +910,7 @@ class App:
             self.compilelog.end(result.success, result.exit_code,
                                 result.elapsed, nerr, nwar)
             if result.success:
+                self._record_build_settings()
                 self.status_msg("Build successful: %s"
                                 % os.path.basename(out_exe))
                 self.compilelog.write_line(
@@ -1428,7 +1524,7 @@ def main():
         root.iconbitmap(icon_path())
     except Exception:
         pass
-    app = App(root)
+    app = App(root, startup_files=sys.argv[1:])
     root.protocol("WM_DELETE_WINDOW", lambda: (
         root.destroy() if app.on_close() else None))
     root.mainloop()
