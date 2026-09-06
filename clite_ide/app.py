@@ -1069,12 +1069,27 @@ class App:
                 latest_version = data.get("tag_name", "").lstrip("v")
                 release_url = data.get("html_url", "")
                 release_notes = data.get("body", "No release notes provided.")
-                
+
+                # Find the Windows installer asset (the .exe), not just the
+                # release page, so we can download it directly.
+                asset_url = ""
+                asset_name = ""
+                asset_size = 0
+                for asset in data.get("assets", []):
+                    name = asset.get("name", "")
+                    if name.lower().endswith(".exe"):
+                        asset_url = asset.get("browser_download_url", "")
+                        asset_name = name
+                        asset_size = asset.get("size", 0)
+                        break
+
                 # Compare versions
                 current = APP_VERSION
                 if self._version_compare(latest_version, current) > 0:
                     # New version available
-                    self.root.after(0, lambda: self._show_update_available(latest_version, current, release_url, release_notes))
+                    self.root.after(0, lambda: self._show_update_available(
+                        latest_version, current, release_url, release_notes,
+                        asset_url, asset_name, asset_size))
                 else:
                     # Up to date
                     self.root.after(0, lambda: self._show_up_to_date(current))
@@ -1115,7 +1130,8 @@ class App:
             if a < b: return -1
         return 0
 
-    def _show_update_available(self, latest, current, url, notes):
+    def _show_update_available(self, latest, current, url, notes,
+                                asset_url="", asset_name="", asset_size=0):
         """Show dialog when update is available."""
         import webbrowser
         t = THEMES.get(self.settings.get("theme", "Light"), THEMES["Light"])
@@ -1143,19 +1159,28 @@ class App:
         notes_text.insert("1.0", notes_short)
         notes_text.configure(state="disabled")
         notes_text.pack(fill="both", expand=True)
-        
+
         btns = ttk.Frame(dlg)
         btns.pack(fill="x", pady=(0, 12), padx=16)
-        
+
         def open_release():
             webbrowser.open(url)
             dlg.destroy()
-        
+
         def close_dlg():
             dlg.destroy()
-        
+
+        def start_download():
+            dlg.destroy()
+            if asset_url:
+                self._download_and_run_update(asset_url, asset_name, asset_size)
+            else:
+                # No installer asset found on the release; fall back to
+                # opening the page so the user can grab it manually.
+                webbrowser.open(url)
+
         ttk.Button(btns, text="View Release", width=14, command=open_release).pack(side="left", padx=(0, 6))
-        ttk.Button(btns, text="Download", width=14, command=lambda: (webbrowser.open(url), dlg.destroy())).pack(side="left", padx=6)
+        ttk.Button(btns, text="Download", width=14, command=start_download).pack(side="left", padx=6)
         ttk.Button(btns, text="Later", width=14, command=close_dlg).pack(side="right")
         
         dlg.update_idletasks()
@@ -1164,6 +1189,94 @@ class App:
         dlg.geometry("+%d+%d" % (x, y))
         dlg.lift()
         dlg.grab_set()
+
+    def _download_and_run_update(self, asset_url, asset_name, asset_size):
+        """Download the installer asset to a temp folder, showing progress,
+        then launch it and quit C-Lite so it can be overwritten."""
+        import tempfile
+        import threading
+        import urllib.request
+
+        t = THEMES.get(self.settings.get("theme", "Light"), THEMES["Light"])
+        progress_dlg = tk.Toplevel(self.root)
+        progress_dlg.title("Downloading Update")
+        progress_dlg.configure(bg=t["window_bg"])
+        progress_dlg.transient(self.root)
+        progress_dlg.resizable(False, False)
+        progress_dlg.protocol("WM_DELETE_WINDOW", lambda: None)  # block close
+
+        ttk.Label(progress_dlg, text="Downloading %s..." % (asset_name or "update"),
+                  padding=(16, 14, 16, 6)).pack(anchor="w")
+        pbar = ttk.Progressbar(progress_dlg, orient="horizontal",
+                                length=320, mode="determinate", maximum=100)
+        pbar.pack(padx=16, pady=(0, 6))
+        pct_label = ttk.Label(progress_dlg, text="0%", padding=(16, 0, 16, 12))
+        pct_label.pack(anchor="w")
+
+        progress_dlg.update_idletasks()
+        x = self.root.winfo_rootx() + (self.root.winfo_width() - progress_dlg.winfo_width()) // 2
+        y = self.root.winfo_rooty() + (self.root.winfo_height() - progress_dlg.winfo_height()) // 2
+        progress_dlg.geometry("+%d+%d" % (x, y))
+        progress_dlg.lift()
+        progress_dlg.grab_set()
+
+        dest_dir = tempfile.gettempdir()
+        dest_name = asset_name or "C-Lite-IDE-Setup.exe"
+        dest_path = os.path.join(dest_dir, dest_name)
+
+        def set_progress(pct):
+            pbar["value"] = pct
+            pct_label.configure(text="%d%%" % pct)
+
+        def on_error(msg):
+            progress_dlg.destroy()
+            dialogs.show_error(self.root, "Check for Updates",
+                                "Failed to download update: %s" % msg)
+
+        def on_done():
+            progress_dlg.destroy()
+            proceed = dialogs.ask_yes_no(
+                self.root, "Install Update",
+                "The update has been downloaded.\n\n"
+                "C-Lite IDE will now close and the installer will run.\n"
+                "Continue?")
+            if proceed:
+                try:
+                    # Launch installer detached; user completes the
+                    # setup wizard (or it runs silently if you pass /S).
+                    import subprocess
+                    subprocess.Popen([dest_path],
+                                      creationflags=getattr(
+                                          subprocess, "DETACHED_PROCESS", 0))
+                except OSError as exc:
+                    dialogs.show_error(self.root, "Check for Updates",
+                                        "Could not launch installer: %s" % exc)
+                    return
+                self.root.after(200, self.root.destroy)
+
+        def do_download():
+            try:
+                req = urllib.request.Request(
+                    asset_url, headers={"User-Agent": "C-Lite-IDE"})
+                with urllib.request.urlopen(req, timeout=30) as resp, \
+                        open(dest_path, "wb") as out:
+                    total = asset_size or int(resp.headers.get("Content-Length", 0) or 0)
+                    downloaded = 0
+                    chunk = 65536
+                    while True:
+                        block = resp.read(chunk)
+                        if not block:
+                            break
+                        out.write(block)
+                        downloaded += len(block)
+                        if total:
+                            pct = min(100, int(downloaded * 100 / total))
+                            self.root.after(0, lambda p=pct: set_progress(p))
+                self.root.after(0, on_done)
+            except Exception as exc:
+                self.root.after(0, lambda: on_error(str(exc)))
+
+        threading.Thread(target=do_download, daemon=True).start()
 
     def _show_up_to_date(self, current):
         """Show dialog when already up to date."""

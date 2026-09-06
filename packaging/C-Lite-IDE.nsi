@@ -172,6 +172,21 @@ Section "C-Lite IDE" SecMain
 SectionEnd
 
 ; ------------------------------------------------------------
+; Silent-install support (used by the in-app auto-updater, which
+; runs "C-Lite-IDE-Setup-<version>.exe /S"). Normal double-click
+; installs are unaffected and still show the full wizard.
+;
+; MUI_FINISHPAGE_RUN only relaunches the app from the Finish page,
+; which silent installs skip entirely, so without this the app
+; would install but never restart itself after an auto-update.
+; ------------------------------------------------------------
+
+Function .onInstSuccess
+    IfSilent 0 +2
+        Exec '"$INSTDIR\${APP_EXE}"'
+FunctionEnd
+
+; ------------------------------------------------------------
 ; Uninstallation
 ; ------------------------------------------------------------
 
